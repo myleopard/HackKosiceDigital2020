@@ -4,7 +4,7 @@ from datetime import datetime as dtt
 
 # Change to 'True' to use Google Cloud
 # May not work on your computers- see top of mysql.py
-__useGoogleCloud = True
+__useGoogleCloud = False
 if __useGoogleCloud:
   import mysql
 
@@ -67,7 +67,8 @@ def partialRestock(shop, ID, quantity = 1):
 
 def fullRestock(shop):
   if __useGoogleCloud:
-    mysql.fullRestock()
+    for i in range(num_goods):
+      mysql.autoRestock(i)
 
   else:
     for i in range(num_goods):
@@ -98,3 +99,7 @@ if __name__ == "__main__":
     mysql.printAll()
 
     mysql.close()
+
+  else:
+    print("\nPandas Database:")
+    print(goodsLog)

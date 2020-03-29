@@ -10,6 +10,9 @@
 import pandas as pd
 import pymysql
 
+from datetime import datetime as dtt
+format = "%Y-%m-%d %H:%M:%S"
+
 # Open database connection
 db = pymysql.connect(
   "35.205.60.66",       # db ip
@@ -78,8 +81,46 @@ def get(table, attribute):
   cursor.execute("SELECT " + attribute + " FROM " + table)
   return cursor.fetchall()
 
-def fullRestock():
-  pass
+def autoRestock(indexNum):
+  cursor.execute("""
+  SELECT -SUM(quantity) AS Quantity
+  FROM shop
+  WHERE indexNum = {0} AND id > (
+    SELECT id
+    FROM shop
+    WHERE indexNum = {0} AND reference = 2
+    ORDER BY id
+    LIMIT 1
+  )
+  """.format(indexNum))
+  quantity = cursor.fetchone()[0]
+  if quantity is not None:
+    insertShop(indexNum, quantity, 2, dtt.now().strftime(format))
+
+def printSummary(table):
+  cursor.execute("""
+  SELECT *
+  FROM (
+      (SELECT * FROM {0} LIMIT 5)
+      UNION
+      (SELECT * FROM {0} ORDER BY id DESC LIMIT 5)
+  ) as t
+  ORDER BY id
+  """.format(table))
+
+  print("TABLE " + table + ": ")
+  counter = 1
+  for row in cursor:
+
+    if counter != row[0]:
+      counter = row[0]
+      print("...")
+    counter += 1
+
+    for item in row:
+      print(str(item), end="  ")
+    print()
+  print()
 
 def printTable(table):
   print("TABLE " + table + ": ")
@@ -90,8 +131,8 @@ def printTable(table):
   print()
 
 def printAll():
-  printTable("shop")
-  printTable("items")
+  printSummary("shop")
+  printSummary("items")
 
 def close():
   db.close()
