@@ -16,28 +16,27 @@ db = pymysql.connect(
   "shop"                # database
 )
 
-# prepare a cursor object using cursor() method
+# prepare a cursor object to interact with database
 cursor = db.cursor()
 
 def createTables():
   cursor.execute("DROP TABLE IF EXISTS goods")
   cursor.execute("""CREATE TABLE goods (
     indexNum INT NOT NULL PRIMARY KEY,
-    location INT NOT NULL,
     quantity INT NOT NULL,
     timestamp DATETIME NOT NULL,
     reference INT NOT NULL
   );
   """)
 
-def insert(indexNum, location, quantity, timestamp, reference):
+def insert(indexNum, quantity, timestamp, reference):
   try:
     # Run Instruction
     cursor.execute("""INSERT INTO goods
-      (indexNum, location, quantity, timestamp, reference)
+      (indexNum, quantity, timestamp, reference)
       VALUES
-      (%s, %s, %s, %s, %s)""",
-      (indexNum, location, quantity, timestamp, reference)
+      (%s, %s, %s, %s)""",
+      (indexNum, quantity, timestamp, reference)
     )
     # Commit changes
     db.commit()
