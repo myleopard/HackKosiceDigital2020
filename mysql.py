@@ -42,14 +42,14 @@ def createItemTable():
   );
   """)
 
-def insertShop(indexNum, quantity, timestamp, reference):
+def insertShop(indexNum, quantity, reference, timestamp):
   try:
     # Run Instruction
     cursor.execute("""INSERT INTO shop
-      (indexNum, quantity, timestamp, reference)
+      (indexNum, quantity, reference, timestamp)
       VALUES
       (%s, %s, %s, %s)""",
-      (indexNum, quantity, timestamp, reference)
+      (indexNum, quantity, reference, timestamp)
     )
     # Commit changes
     db.commit()
@@ -79,7 +79,6 @@ def get(table, attribute):
   return cursor.fetchall()
 
 def fullRestock():
-  cursor.execute("SELECT * FROM shop")
   pass
 
 def printTable(table):
@@ -88,6 +87,7 @@ def printTable(table):
     for item in row:
       print(str(item), end="  ")
     print()
+  print()
 
 def printAll():
   printTable("shop")

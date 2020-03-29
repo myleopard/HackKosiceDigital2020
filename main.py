@@ -4,7 +4,7 @@ from datetime import datetime as dtt
 
 # Change to 'True' to use Google Cloud
 # May not work on your computers- see top of mysql.py
-__useGoogleCloud = False
+__useGoogleCloud = True
 if __useGoogleCloud:
   import mysql
 
@@ -17,12 +17,11 @@ def shopDefine(gS):
   Quant = [Quant[i] - (Quant[i] % gS[i]) for i in range(num_goods)]
 
   if __useGoogleCloud:
-    createShopTable()
+    mysql.createShopTable()
     for i in range(num_goods):
-      mysql.insert(
-        "shop",                    # Database
+      mysql.insertShop(
         i,                         # Index Number
-        Quant[i],                  # Quantity
+        float(Quant[i]),           # Quantity
         2,                         # Reference
         dtt.now().strftime(format) # Timestamp
       )
@@ -37,10 +36,9 @@ def shopDefine(gS):
 
 def itemsDefine():
   if __useGoogleCloud:
-    createItemTable()
+    mysql.createItemTable()
     for i in range(num_goods):
-      mysql.insert(
-        "items",                          # Database
+      mysql.insertItem(
         np.random.randint(num_locations), # Location
         np.random.randint(1, 10),         # Group Size
         1.0 / num_goods                   # Shelf fraction per group
