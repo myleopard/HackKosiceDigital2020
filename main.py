@@ -11,14 +11,8 @@ def shopDefine(num_goods,gS):
     "Quantity": Quant,
     "Reference": np.full(num_goods, 2), # 0 = purchase, 1 = partial restock, 2 = full shop restock
     "Timestamp": [dtt.now().strftime('%H:%M %d-%m-%Y ') for i in range(num_goods)]
-
   })
-
-  #total = shopStock.groupby(["Location"]).apply(lambda x : sum(x["Quantity"])).values
-  #buffer = 5
-  #Max = total + buffer
-
-  return (shopStock)#, Max)
+  return (shopStock)
 
 def itemsDefine(num_goods):
   num_locations = 10
