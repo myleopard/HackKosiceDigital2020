@@ -87,7 +87,7 @@ def partialRestock(shop, ID, quantity = 1):
     shop.loc[len(shop)] = [ID, quantity, 1, dtt.now().strftime(format)]
     return shop
 
-def fullRestock(shop):
+def fullRestockWithoutAllocation(shop):
   if __useGoogleCloud:
     for i in range(num_goods):
       mysql.autoRestock(i)
@@ -101,8 +101,25 @@ def fullRestock(shop):
       if not actionsAfter.empty:
         quantity = sum(actionsAfter["Quantity"])
         shop.loc[len(shop)] = [i, -quantity, 2, dtt.now().strftime(format)]
-
     return shop
+
+def fullRestock(shop, items):
+  alloc = allocate(purchasesLastWeek(shop), items)
+
+  if __useGoogleCloud:
+    for i in range(num_goods):
+      # AGAIN GOOGLE CLOUD VERSIONS OF
+      pass
+
+  else:
+    total = np.zeros(num_goods)
+    for i in range(num_goods):
+      total[i] = sum(shop.loc[shop["Index #"] == i]["Quantity"])
+    refill = alloc - total
+    for i in range(len(refill)):
+      if refill[i] != 0:
+        shop.loc[len(shop)] = [i, refill[i], 2, dtt.now().strftime(format)]
+  return shop
 
 def purchasesLastWeek(shop):
   timeLastWeek = dtt.now() - timedelta(weeks=1)
@@ -133,9 +150,6 @@ def allocate(pastWeek, items):
       for j in index:
         spaceAllocate[j] = spaceSold[j] / total
 
-    print("ITEMS: ")
-    print(items)
-
     # remember to do min of 1
     shelfSpace = (spaceAllocate // items["Shelf fraction per group"]) * items["Group Size"]
     return shelfSpace
@@ -144,9 +158,23 @@ if __name__ == "__main__":
   items = itemsDefine()
   goodsLog = shopDefine(items)
 
-  transaction(goodsLog, 0, 20)
+  print("FRACTION OF SHELF TAKEN UP")
+  quant = np.array([sum(goodsLog.loc[goodsLog["Index #"] == i]["Quantity"]) for i in range(num_goods)])
+  space = quant / items["Group Size"] * items["Shelf fraction per group"]
+  print([sum(space.loc[items["Location"] == i]) for i in range(num_locations)])
 
-  print(allocate(purchasesLastWeek(goodsLog), items))
+  transaction(goodsLog, 0, 10)
+  fullRestock(goodsLog, items)
+
+  print("FRACTION OF SHELF TAKEN UP")
+  quant = np.array([sum(goodsLog.loc[goodsLog["Index #"] == i]["Quantity"]) for i in range(num_goods)])
+  space = quant / items["Group Size"] * items["Shelf fraction per group"]
+  print([sum(space.loc[items["Location"] == i]) for i in range(num_locations)])
+
+  print("ITEMS: ")
+  print(items)
+
+
 
   if __useGoogleCloud:
     print("\nGoogle Cloud Database:")
