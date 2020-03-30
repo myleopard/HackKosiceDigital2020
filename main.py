@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from datetime import datetime as dtt, timedelta
+import time
 
 # Change to 'True' to use Google Cloud
 # May not work on your computers- see top of mysql.py
@@ -12,49 +13,7 @@ num_goods = 100
 num_locations = 10
 format = "%Y-%m-%d %H:%M:%S"
 
-# TODO: check TRUE case for items = None
-def shopDefine(items):
-  gS = 0
-  sfpg = 0
 
-  if __useGoogleCloud:
-    gS = mysql.get("items", "groupSize")
-    sfpg = mysql.get("items", "shelfFraction")
-  else:
-    gS = items["Group Size"]
-    sfpg = items["Shelf fraction per group"]
-
-  # Random quantities
-  Quant = np.random.randint(20, 100, num_goods)
-
-  # List of space taken up for each type of item
-  space = Quant / gS * sfpg
-
-  # Scale to make shelf space proportion total to 1 per location
-  for location in range(num_locations):
-    scale = sum(space[items["Location"] == location])
-    Quant[items["Location"] == location] = Quant[items["Location"] == location] / scale
-
-  # Ensure whole numbers of group sizes are used (shelf size now <= 1)
-  Quant = [Quant[i] - (Quant[i] % gS[i]) for i in range(num_goods)]
-
-  if __useGoogleCloud:
-    mysql.createShopTable()
-    for i in range(num_goods):
-      mysql.insertShop(
-        i,                         # Index Number
-        float(Quant[i]),           # Quantity
-        2,                         # Reference
-        dtt.now().strftime(format) # Timestamp
-      )
-
-  else:
-    return pd.DataFrame({
-      "Index #": np.arange(num_goods),
-      "Quantity": Quant,
-      "Reference": np.full(num_goods, 2), # 0 = purchase, 1 = partial restock, 2 = full shop restock
-      "Timestamp": [dtt.now().strftime(format) for i in range(num_goods)]
-    })
 
 def itemsDefine():
   if __useGoogleCloud:
@@ -154,7 +113,27 @@ def allocate(pastWeek, items):
     shelfSpace = (spaceAllocate // items["Shelf fraction per group"]) * items["Group Size"]
     return shelfSpace
 
+# TODO: check TRUE case for items = None
+# TODO: Make GOOGLE CLOUD version
+def shopDefine(items):
+  shop = pd.DataFrame({
+      "Index #": [],
+      "Quantity": [],
+      "Reference": [],
+      "Timestamp": []
+    })
+  shop = fullRestock(shop, items)
+  return shop
+
+
+
+# REMOVE THIS ONCE DONE TESTING
+pd.set_option("display.max_rows", None, "display.max_columns", None)
+
+
+
 if __name__ == "__main__":
+  # RANDOM NUMBERS
   items = itemsDefine()
   goodsLog = shopDefine(items)
 
@@ -163,7 +142,11 @@ if __name__ == "__main__":
   space = quant / items["Group Size"] * items["Shelf fraction per group"]
   print([sum(space.loc[items["Location"] == i]) for i in range(num_locations)])
 
+  time.sleep(1)
+  fullRestock(goodsLog, items)
+  time.sleep(1)
   transaction(goodsLog, 0, 10)
+  time.sleep(1)
   fullRestock(goodsLog, items)
 
   print("FRACTION OF SHELF TAKEN UP")
@@ -173,8 +156,6 @@ if __name__ == "__main__":
 
   print("ITEMS: ")
   print(items)
-
-
 
   if __useGoogleCloud:
     print("\nGoogle Cloud Database:")
