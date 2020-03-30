@@ -91,27 +91,27 @@ def purchasesLastWeek(shop):
     shop["Timestamp"] = pd.to_datetime(shop["Timestamp"])
     return shop.loc[(shop["Timestamp"] > timeLastWeek) & (shop["Reference"] == 0)]
 
-
-# TODO: add Google Cloud version of
-
 def allocate(pastWeek, items):
+  if __useGoogleSheets:
+    # TODO: add Google Cloud version of
+    pass
+  else:
+    quantity = np.zeros(len(items))
+    for i in range(len(items)):
+      quantity[i] = sum(pastWeek.loc[pastWeek["Index #"] == i]["Quantity"])
 
-  quantity = np.zeros(len(items))
-  for i in range(len(items)):
-    quantity[i] = sum(pastWeek.loc[pastWeek["Index #"] == i]["Quantity"])
+    groups = items["Group Size"]
+    space = items["Shelf fraction per group"]
+    spaceSold = (quantity // groups + 1) * space
+    spaceAllocate = np.zeros(len(items))
 
-  groups = items["Group Size"]
-  space = items["Shelf fraction per group"]
-  spaceSold = (quantity // groups + 1) * space
-  spaceAllocate = np.zeros(len(items))
+    for i in range(max(items["Location"]) + 1):
+      index = items[items["Location"] == i].index
+      total = sum(spaceSold[index])
+      for j in index:
+        spaceAllocate[j] = spaceSold[j] / total
 
-  for i in range(max(items["Location"]) + 1):
-    index = items[items["Location"] == i].index
-    total = sum(spaceSold[index])
-    for j in index:
-      spaceAllocate[j] = spaceSold[j] / total
-
-  return spaceAllocate
+    return spaceAllocate
 
 if __name__ == "__main__":
   items = itemsDefine()
