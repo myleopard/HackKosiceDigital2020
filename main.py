@@ -97,8 +97,8 @@ def allocate(pastWeek,items):
 
   for i in range(items.Location.max()):
     index = np.array(items[items.Location == i].index.array)
-  for j in index:
-    spaceAllocate[j] = spaceSold[j]/sum(spaceSold[index])
+    for j in index:
+      spaceAllocate[j] = spaceSold[j]/sum(spaceSold[index])
   return spaceAllocate
 
 if __name__ == "__main__":
