@@ -80,6 +80,19 @@ def fullRestock(shop):
         quantity = sum(actionsAfter["Quantity"])
         shop.loc[len(shop)] = [i, -quantity, 2, dtt.now().strftime(format)]
 
+def alocate(pastWeek,items):
+  for i in range(len(items)):
+    Q[i] = np.array(pastWeek["Index #"==i].sum())
+  
+  groups = np.array(items["Group Size"].array)
+  space = np.array(items["Shelf fraction per group"].array)
+  spaceSold = (Q // groups + 1)*space
+  
+  for i in range(items.Location.max()):
+    index = np.array(items[items.Location == i].index.array)
+  for j in index:
+    spaceAllocate[j] = spaceSold[j]/sum(spaceSold[index])
+  return spaceAllocate
 
 if __name__ == "__main__":
   items = itemsDefine()
