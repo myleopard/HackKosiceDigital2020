@@ -12,8 +12,30 @@ num_goods = 100
 num_locations = 10
 format = "%Y-%m-%d %H:%M:%S"
 
-def shopDefine(gS):
+# TODO: check TRUE case for items = None
+def shopDefine(items):
+  gS = 0
+  sfpg = 0
+
+  if __useGoogleCloud:
+    gS = mysql.get("items", "groupSize")
+    sfpg = mysql.get("items", "shelfFraction")
+  else:
+    gS = items["Group Size"]
+    sfpg = items["Shelf fraction per group"]
+
+  # Random quantities
   Quant = np.random.randint(20, 100, num_goods)
+
+  # List of space taken up for each type of item
+  space = Quant / gS * sfpg
+
+  # Scale to make shelf space proportion total to 1 per location
+  for location in range(num_locations):
+    scale = sum(space[items["Location"] == location])
+    Quant[items["Location"] == location] = Quant[items["Location"] == location] / scale
+
+  # Ensure whole numbers of group sizes are used (shelf size now <= 1)
   Quant = [Quant[i] - (Quant[i] % gS[i]) for i in range(num_goods)]
 
   if __useGoogleCloud:
@@ -92,13 +114,13 @@ def purchasesLastWeek(shop):
     return shop.loc[(shop["Timestamp"] > timeLastWeek) & (shop["Reference"] == 0)]
 
 def allocate(pastWeek, items):
-  if __useGoogleSheets:
+  if __useGoogleCloud:
     # TODO: add Google Cloud version of
     pass
   else:
     quantity = np.zeros(len(items))
     for i in range(len(items)):
-      quantity[i] = sum(pastWeek.loc[pastWeek["Index #"] == i]["Quantity"])
+      quantity[i] = -sum(pastWeek.loc[pastWeek["Index #"] == i]["Quantity"])
 
     groups = items["Group Size"]
     space = items["Shelf fraction per group"]
@@ -111,20 +133,18 @@ def allocate(pastWeek, items):
       for j in index:
         spaceAllocate[j] = spaceSold[j] / total
 
-    return spaceAllocate
+    print("ITEMS: ")
+    print(items)
+
+    # remember to do min of 1
+    shelfSpace = (spaceAllocate // items["Shelf fraction per group"]) * items["Group Size"]
+    return shelfSpace
 
 if __name__ == "__main__":
   items = itemsDefine()
-  goodsLog = None
+  goodsLog = shopDefine(items)
 
-  if __useGoogleCloud:
-    goodsLog = shopDefine(mysql.get("items", "groupSize"))
-  else:
-    goodsLog = shopDefine(items["Group Size"])
-
-  transaction(goodsLog, 0, 2)
-  partialRestock(goodsLog, 1, 2)
-  fullRestock(goodsLog)
+  transaction(goodsLog, 0, 20)
 
   print(allocate(purchasesLastWeek(goodsLog), items))
 
