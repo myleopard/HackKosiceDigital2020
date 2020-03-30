@@ -32,8 +32,7 @@ def createShopTable():
     quantity INT NOT NULL,
     reference INT NOT NULL,
     timestamp DATETIME NOT NULL
-  );
-  """)
+  )""")
 
 def createItemTable():
   cursor.execute("DROP TABLE IF EXISTS items")
@@ -42,8 +41,7 @@ def createItemTable():
     location INT NOT NULL,
     groupSize INT NOT NULL,
     shelfFraction FLOAT NOT NULL
-  );
-  """)
+  )""")
 
 def insertShop(indexNum, quantity, reference, timestamp):
   try:
@@ -51,8 +49,7 @@ def insertShop(indexNum, quantity, reference, timestamp):
     cursor.execute("""INSERT INTO shop
       (indexNum, quantity, reference, timestamp)
       VALUES
-      (%s, %s, %s, %s)""",
-      (indexNum, quantity, reference, timestamp)
+      ({}, {}, {}, {})""".format(indexNum, quantity, reference, timestamp)
     )
     # Commit changes
     db.commit()
@@ -67,8 +64,7 @@ def insertItem(location, groupSize, shelfFraction):
     cursor.execute("""INSERT INTO items
       (location, groupSize, shelfFraction)
       VALUES
-      (%s, %s, %s)""",
-      (location, groupSize, shelfFraction)
+      ({}, {}, {})""".format(location, groupSize, shelfFraction)
     )
     # Commit changes
     db.commit()
@@ -96,6 +92,14 @@ def autoRestock(indexNum):
   quantity = cursor.fetchone()[0]
   if quantity is not None:
     insertShop(indexNum, quantity, 2, dtt.now().strftime(format))
+
+def purchasesLastWeek():
+  cursor.execute("""
+  SELECT *
+  FROM shop
+  WHERE reference = 0 AND timestamp > NOW() - INTERVAL 1 WEEK
+  """)
+  return cursor.fetchall()
 
 def printSummary(table):
   cursor.execute("""

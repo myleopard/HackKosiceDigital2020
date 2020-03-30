@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from datetime import datetime as dtt
+from datetime import datetime as dtt, timedelta
 
 # Change to 'True' to use Google Cloud
 # May not work on your computers- see top of mysql.py
-__useGoogleCloud = False
+__useGoogleCloud = True
 if __useGoogleCloud:
   import mysql
 
@@ -31,7 +31,7 @@ def shopDefine(gS):
       "Index #": np.arange(num_goods),
       "Quantity": Quant,
       "Reference": np.full(num_goods, 2), # 0 = purchase, 1 = partial restock, 2 = full shop restock
-      "Timestamp": [dtt.now().strftime(format) for i in range(num_goods)]
+      "Timestamp": pd.to_datetime([dtt.now().strftime(format) for i in range(num_goods)])
     })
 
 def itemsDefine():
@@ -80,6 +80,12 @@ def fullRestock(shop):
         quantity = sum(actionsAfter["Quantity"])
         shop.loc[len(shop)] = [i, -quantity, 2, dtt.now().strftime(format)]
 
+def purchasesLastWeek(shop):
+  timeLastWeek = dtt.now() - timedelta(weeks=1)
+  if __useGoogleCloud:
+    return mysql.purchasesLastWeek()
+  else:
+    return shop.loc[(shop["Timestamp"] > timeLastWeek) & (a["Reference"] == 0)]
 
 if __name__ == "__main__":
   items = itemsDefine()
@@ -93,6 +99,8 @@ if __name__ == "__main__":
   transaction(goodsLog, 0, 2)
   partialRestock(goodsLog, 1, 2)
   fullRestock(goodsLog)
+
+  print(purchasesLastWeek(goodsLog))
 
   if __useGoogleCloud:
     print("\nGoogle Cloud Database:")
