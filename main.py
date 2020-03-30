@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from datetime import datetime as dtt, timedelta
+from time import sleep
 
 num_goods = 100
 num_locations = 10
@@ -97,9 +98,9 @@ if __name__ == "__main__":
   items = itemsDefine()
   goodsLog = shopDefine(items)
 
-  time.sleep(1)
+  sleep(1)
   transaction(goodsLog, 0, 10)
-  time.sleep(1)
+  sleep(1)
   fullRestock(goodsLog, items)
 
   print("\nPandas Database:")
